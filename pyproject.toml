@@ -1,0 +1,21 @@
+[project]
+name = "practice-chatbot"
+version = "0.1.0"
+description = "Personal Chatbot Project"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-dotenv>=1.2.1",
+]
+
+[tool.uv]
+package = true
+
+[project.scripts]
+income-tax-main = "income_tax.__main__:Main.main"
+
+[project.urls]
+Repository = "https://github.com/jslblar080/practice-chatbot"
+
+[tool.setuptools.packages.find]
+where = ["src"]
