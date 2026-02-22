@@ -5,6 +5,8 @@ description = "Personal Chatbot Project"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "numpy>=2.2.6",
+    "openai>=2.21.0",
     "python-dotenv>=1.2.1",
 ]
 
@@ -12,7 +14,7 @@ dependencies = [
 package = true
 
 [project.scripts]
-income-tax-main = "income_tax.__main__:Main.main"
+income-tax-main = "income_tax.cli:CLI.main"
 
 [project.urls]
 Repository = "https://github.com/jslblar080/practice-chatbot"
