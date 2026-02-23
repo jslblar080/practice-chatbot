@@ -2,6 +2,7 @@ import numpy as np
 import os
 
 from dotenv import load_dotenv
+from langchain_core.language_models.chat_models import BaseChatModel
 from openai import OpenAI
 
 
@@ -63,3 +64,9 @@ class Utils:
         word1_word2_similarity = cls.cos_sim(word1_vec, word2_vec)
         print()
         return word1_word2_similarity
+
+    @staticmethod
+    def msg_content(llm: BaseChatModel, input: str):
+        load_dotenv()
+        ai_message = llm.invoke(input)
+        print(f"{llm.__class__.__name__}:\n{ai_message.content}\n")

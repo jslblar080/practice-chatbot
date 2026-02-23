@@ -5,6 +5,9 @@ description = "Personal Chatbot Project"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "langchain-ollama>=1.0.1",
+    "langchain-openai>=1.1.10",
+    "langchain-upstage>=0.7.6",
     "numpy>=2.2.6",
     "openai>=2.21.0",
     "python-dotenv>=1.2.1",
@@ -14,6 +17,7 @@ dependencies = [
 package = true
 
 [project.scripts]
+income-tax-test-utils = "income_tax.cli:CLI.test_utils"
 income-tax-main = "income_tax.cli:CLI.main"
 
 [project.urls]
