@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 import os
 
 from dotenv import load_dotenv
@@ -14,10 +15,11 @@ class Utils:
     """
 
     @staticmethod
-    def openai_vec(input: str, verbose=True) -> np.typing.NDArray:
+    def openai_vec(input: str, verbose=True) -> npt.NDArray:
         load_dotenv()
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.embeddings.create(
+        embeddings = client.embeddings
+        response = embeddings.create(
             input=input, model="text-embedding-3-large"  # suitable for Korean
         )
         vector = np.array(response.data[0].embedding)
@@ -26,19 +28,20 @@ class Utils:
         return vector
 
     @staticmethod
-    def upstage_vec(input: str, verbose=True) -> np.typing.NDArray:
+    def upstage_vec(input: str, verbose=True) -> npt.NDArray:
         load_dotenv()
         client = OpenAI(
             api_key=os.getenv("UPSTAGE_API_KEY"), base_url="https://api.upstage.ai/v1"
         )
-        response = client.embeddings.create(input=input, model="embedding-query")
+        embeddings = client.embeddings
+        response = embeddings.create(input=input, model="embedding-query")
         vector = np.array(response.data[0].embedding)
         if verbose:
             print(f"{input}: {vector}")
         return vector
 
     @staticmethod
-    def cos_sim(vec1: np.typing.NDArray, vec2: np.typing.NDArray) -> float:
+    def cos_sim(vec1: npt.NDArray, vec2: npt.NDArray) -> float:
         dot_product = np.dot(vec1, vec2)
         norm_vec1 = np.linalg.norm(vec1)
         norm_vec2 = np.linalg.norm(vec2)
