@@ -5,9 +5,9 @@ from langchain_chroma import Chroma
 from langchain_community.document_loaders import Docx2txtLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_upstage import ChatUpstage
+from langchain_upstage import ChatUpstage, UpstageEmbeddings
 from pathlib import Path
 from .utils import Utils
 
@@ -41,8 +41,9 @@ class CLI:
         load_dotenv()
         persist_dir = Path.cwd() / "src" / "income_tax" / ".chroma"
         doc_path = Path.cwd() / "src" / "income_tax" / "assets" / "tax.docx"
-        embedding = OpenAIEmbeddings(model="text-embedding-3-large")
-
+        embedding = UpstageEmbeddings(
+            model="solar-embedding-1-large-passage",
+        )
         if persist_dir.exists():
             database = Chroma(
                 collection_name="chroma-tax",
@@ -62,16 +63,16 @@ class CLI:
                 collection_name="chroma-tax",
                 persist_directory=str(persist_dir),
             )
-        llm = ChatOpenAI(model="gpt-5.2")
+        llm = ChatUpstage(model="solar-1-mini-chat")
         prompt = ChatPromptTemplate.from_template(
             """
             당신은 최고의 한국 소득세 전문가입니다.
 
-            반드시 아래 참고 자료에 근거해서만 답변하세요.
-            참고 자료에 없는 내용은 절대 추측하지 마세요.
+            반드시 아래 참고 문서에 근거해서만 답변하세요.
+            참고 문서에 없는 내용은 절대 추측하지 마세요.
             모르면 모른다고 답하세요.
             
-            참고 자료:
+            참고 문서:
             {context}
 
             질문:
