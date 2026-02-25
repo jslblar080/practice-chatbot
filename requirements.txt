@@ -1,12 +1,15 @@
+anthropic
 docx2txt
 langchain
 langchain-chroma
 langchain-community
 langchain-ollama
 langchain-openai
+langchain-pinecone
 langchain-text-splitters
 langchain-upstage
 numpy
 openai
+python-docx
 python-dotenv
 tokenizers>=0.21

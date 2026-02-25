@@ -2,13 +2,11 @@ from dotenv import load_dotenv
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_chroma import Chroma
-from langchain_community.document_loaders import Docx2txtLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_upstage import ChatUpstage, UpstageEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pathlib import Path
+from .docx_image_to_markdown import DocxImageToMarkdown
 from .utils import Utils
 
 
@@ -37,52 +35,51 @@ class CLI:
         return
 
     @staticmethod
+    def convert_docx_img_to_md():
+        load_dotenv()
+        assets_dir = Path.cwd() / "src" / "income_tax" / "assets"
+        converter = DocxImageToMarkdown()
+        converter.convert(
+            str(assets_dir / "tax.docx"), str(assets_dir / "tax_with_markdown.docx")
+        )
+        print(converter.summary())
+
+    @staticmethod
     def main():
         load_dotenv()
-        persist_dir = Path.cwd() / "src" / "income_tax" / ".chroma"
-        doc_path = Path.cwd() / "src" / "income_tax" / "assets" / "tax.docx"
-        embedding = UpstageEmbeddings(
-            model="solar-embedding-1-large-passage",
+        doc_path = (
+            Path.cwd() / "src" / "income_tax" / "assets" / "tax_with_markdown.docx"
         )
-        if persist_dir.exists():
-            database = Chroma(
-                collection_name="chroma-tax",
-                persist_directory=str(persist_dir),
-                embedding_function=embedding,
-            )
-        else:
-            loader = Docx2txtLoader(doc_path)
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1500,
-                chunk_overlap=200,
-            )
-            document_list = loader.load_and_split(text_splitter=text_splitter)
-            database = Chroma.from_documents(
-                documents=document_list,
-                embedding=embedding,
-                collection_name="chroma-tax",
-                persist_directory=str(persist_dir),
-            )
-        llm = ChatUpstage(model="solar-1-mini-chat")
+        embedding = OpenAIEmbeddings(
+            model="text-embedding-3-large",
+        )
+        # database = Utils.build_chroma_db(
+        #     doc_path, embedding, (Path.cwd() / "src" / "income_tax" / ".chroma")
+        # )
+        database = Utils.build_pinecone_db(doc_path, embedding)
+        llm = ChatOpenAI(model="gpt-4o-mini")
         prompt = ChatPromptTemplate.from_template(
             """
-            당신은 최고의 한국 소득세 전문가입니다.
+            당신은 한국 소득세 전문가입니다.
 
-            반드시 아래 참고 문서에 근거해서만 답변하세요.
-            참고 문서에 없는 내용은 절대 추측하지 마세요.
-            모르면 모른다고 답하세요.
-            
-            참고 문서:
+            아래 참고 문서에 제공된 정보를 근거로
+            질문에 대해 단계적으로 생각하여 답변하세요.
+
+            참고 문서에 명시된 자료를 활용해 결론을 도출하는 것은 허용됩니다.
+            단, 참고 문서에 전혀 없는 새로운 사실을 만들어내지는 마세요.
+
+            [참고 문서]
             {context}
 
-            질문:
+            [질문]
             {input}
             """
         )
         document_chain = create_stuff_documents_chain(llm, prompt)
         retrieval_chain = create_retrieval_chain(
-            database.as_retriever(search_kwargs={"k": 3}), document_chain
+            database.as_retriever(search_kwargs={"k": 4}),
+            document_chain,
         )
-        query = "연봉 5천만원인 직장인의 소득세는 얼마인가요?"
+        query = "연봉 5천만원인 거주자의 소득세는 얼마인가요?"
         result = retrieval_chain.invoke({"input": query})
         print(f"{llm.__class__.__name__}:\n{result['answer']}\n")

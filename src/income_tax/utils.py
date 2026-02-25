@@ -3,8 +3,15 @@ import numpy.typing as npt
 import os
 
 from dotenv import load_dotenv
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import Docx2txtLoader
+from langchain_core.embeddings.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_pinecone import PineconeVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import OpenAI
+from pathlib import Path
+from pinecone import Pinecone, ServerlessSpec
 
 
 class Utils:
@@ -73,3 +80,62 @@ class Utils:
         load_dotenv()
         ai_message = llm.invoke(input)
         print(f"{llm.__class__.__name__}:\n{ai_message.content}\n")
+
+    @staticmethod
+    def build_chroma_db(
+        doc_path: Path,
+        embedding: Embeddings,
+        persist_dir: Path,
+        collection_name="chroma-tax",
+    ) -> Chroma:
+        if persist_dir.exists():
+            database = Chroma(
+                collection_name=collection_name,
+                persist_directory=str(persist_dir),
+                embedding_function=embedding,
+            )
+        else:
+            loader = Docx2txtLoader(doc_path)
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1500,
+                chunk_overlap=200,
+            )
+            document_list = loader.load_and_split(text_splitter=text_splitter)
+            database = Chroma.from_documents(
+                documents=document_list,
+                embedding=embedding,
+                collection_name=collection_name,
+                persist_directory=str(persist_dir),
+            )
+        return database
+
+    @staticmethod
+    def build_pinecone_db(
+        doc_path: Path, embedding: Embeddings, index_name="tax-index"
+    ) -> PineconeVectorStore:
+        pc = Pinecone()
+        existing_indexes = [index["name"] for index in pc.list_indexes()]
+        if index_name in existing_indexes:
+            database = PineconeVectorStore(
+                index_name=index_name,
+                embedding=embedding,
+            )
+        else:
+            loader = Docx2txtLoader(doc_path)
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1500,
+                chunk_overlap=200,
+            )
+            document_list = loader.load_and_split(text_splitter=text_splitter)
+            pc.create_index(
+                name=index_name,
+                dimension=len(embedding.embed_query("dimension check")),
+                metric="cosine",
+                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+            )
+            database = PineconeVectorStore.from_documents(
+                documents=document_list,
+                embedding=embedding,
+                index_name=index_name,
+            )
+        return database
