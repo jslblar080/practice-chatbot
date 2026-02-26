@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.schema.output_parser import StrOutputParser
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
@@ -58,6 +59,25 @@ class CLI:
         # )
         database = Utils.build_pinecone_db(doc_path, embedding)
         llm = ChatOpenAI(model="gpt-4o-mini")
+        rewrite_prompt = ChatPromptTemplate.from_template(
+            """
+            당신은 언어 전문가입니다.
+
+            아래 규칙을 참고하여 질문을 변환하세요.
+
+            [규칙]
+            - 사람을 나타내는 표현(직장인, 개인, 사람 등)은 "거주자"로 변환하세요.
+            - 변환이 필요 없다면 원문을 그대로 출력하세요.
+            - 다른 설명은 하지 말고 변환된 질문만 출력하세요.
+
+            [질문]
+            {input}
+            """
+        )
+        rewrite_chain = rewrite_prompt | llm | StrOutputParser()
+        query = "연봉 5천만원인 거주자의 종합소득세는 얼마인가요?"
+        normalized_query = rewrite_chain.invoke({"input": query})
+        print(f"User:\n{normalized_query}\n")
         prompt = ChatPromptTemplate.from_template(
             """
             당신은 한국 소득세 전문가입니다.
@@ -80,6 +100,5 @@ class CLI:
             database.as_retriever(search_kwargs={"k": 4}),
             document_chain,
         )
-        query = "연봉 5천만원인 거주자의 소득세는 얼마인가요?"
-        result = retrieval_chain.invoke({"input": query})
+        result = retrieval_chain.invoke({"input": normalized_query})
         print(f"{llm.__class__.__name__}:\n{result['answer']}\n")
