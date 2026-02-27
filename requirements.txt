@@ -12,4 +12,5 @@ numpy
 openai
 python-docx
 python-dotenv
+streamlit
 tokenizers>=0.21
