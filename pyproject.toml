@@ -29,7 +29,6 @@ package = true
 [project.scripts]
 income-tax-test-utils = "income_tax.cli:CLI.test_utils"
 income-tax-convert-docx-img-to-md = "income_tax.cli:CLI.convert_docx_img_to_md"
-income-tax-main = "income_tax.cli:CLI.main"
 
 [project.urls]
 Repository = "https://github.com/jslblar080/practice-chatbot"
