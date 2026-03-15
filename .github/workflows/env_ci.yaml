@@ -21,7 +21,6 @@ jobs:
           pip install uv
           uv add --requirements requirements.txt
           uv sync
-          source .venv/bin/activate
       
       - name: Create .env file
         run: |
@@ -30,5 +29,6 @@ jobs:
 
       - name: Run tests
         run: |
+          source .venv/bin/activate
           streamlit run src/income_tax/app.py
           
